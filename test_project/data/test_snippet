@@ -1,7 +1,15 @@
 
+perplexity = 50
 
-url
+#T-SNE with two dimensions
+tsne_2d = TSNE(n_components=2, perplexity=perplexity)
 
-url
+#T-SNE with three dimensions
+tsne_3d = TSNE(n_components=3, perplexity=perplexity)
 
-ok
+#This DataFrame contains two dimensions, built by T-SNE
+TCs_2d = pd.DataFrame(tsne_2d.fit_transform(plotX.drop(["Cluster"], axis=1)))
+
+#And this DataFrame contains three dimensions, built by T-SNE
+TCs_3d = pd.DataFrame(tsne_3d.fit_transform(plotX.drop(["Cluster"], axis=1)))
+
