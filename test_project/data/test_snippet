@@ -13,3 +13,84 @@ TCs_2d = pd.DataFrame(tsne_2d.fit_transform(plotX.drop(["Cluster"], axis=1)))
 #And this DataFrame contains three dimensions, built by T-SNE
 TCs_3d = pd.DataFrame(tsne_3d.fit_transform(plotX.drop(["Cluster"], axis=1)))
 
+
+
+gms_per_k = [GaussianMixture(n_components=k, n_init=10, random_state=42).fit(X)
+             for k in range(1, 11)]
+             
+bics = [model.bic(X) for model in gms_per_k]
+aics = [model.aic(X) for model in gms_per_k]
+
+plt.figure(figsize=(8, 3))
+plt.plot(range(1, 11), bics, "bo-", label="BIC")
+plt.plot(range(1, 11), aics, "go--", label="AIC")
+plt.xlabel("$k$", fontsize=14)
+plt.ylabel("Information Criterion", fontsize=14)
+plt.axis([1, 9.5, np.min(aics) - 50, np.max(aics) + 50])
+plt.annotate('Minimum',
+             xy=(3, bics[2]),
+             xytext=(0.35, 0.6),
+             textcoords='figure fraction',
+             fontsize=14,
+             arrowprops=dict(facecolor='black', shrink=0.1)
+            )
+plt.legend()
+save_fig("aic_bic_vs_k_plot")
+plt.show()
+
+min_bic = np.infty
+
+for k in range(1, 11):
+    for covariance_type in ("full", "tied", "spherical", "diag"):
+        bic = GaussianMixture(n_components=k, n_init=10,
+                              covariance_type=covariance_type,
+                              random_state=42).fit(X).bic(X)
+        if bic < min_bic:
+            min_bic = bic
+            best_k = k
+            best_covariance_type = covariance_type
+            
+            
+best_k
+best_covariance_type
+
+
+from matplotlib.colors import LogNorm
+
+def plot_gaussian_mixture(clusterer, X, resolution=1000, show_ylabels=True):
+    mins = X.min(axis=0) - 0.1
+    maxs = X.max(axis=0) + 0.1
+    xx, yy = np.meshgrid(np.linspace(mins[0], maxs[0], resolution),
+                         np.linspace(mins[1], maxs[1], resolution))
+    Z = -clusterer.score_samples(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+
+    plt.contourf(xx, yy, Z,
+                 norm=LogNorm(vmin=1.0, vmax=30.0),
+                 levels=np.logspace(0, 2, 12))
+    plt.contour(xx, yy, Z,
+                norm=LogNorm(vmin=1.0, vmax=30.0),
+                levels=np.logspace(0, 2, 12),
+                linewidths=1, colors='k')
+
+    Z = clusterer.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+    plt.contour(xx, yy, Z,
+                linewidths=2, colors='r', linestyles='dashed')
+    
+    plt.plot(X[:, 0], X[:, 1], 'k.', markersize=2)
+    #plot_centroids(clusterer.means_, clusterer.weights_)
+
+    plt.xlabel("$x_1$", fontsize=14)
+    if show_ylabels:
+        plt.ylabel("$x_2$", fontsize=14, rotation=0)
+    else:
+        plt.tick_params(labelleft=False)
+        
+        
+plt.figure(figsize=(8, 4))
+
+plot_gaussian_mixture(gm, X)
+
+save_fig("gaussian_mixtures_plot")
+plt.show()
